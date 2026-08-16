@@ -1,69 +1,160 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { ArrowRight, MessageSquare, BarChart2, ClipboardList, Video } from 'lucide-react'
+import './home.css'
+
+const features = [
+  {
+    icon: MessageSquare,
+    color: '#0D9488',
+    title: 'Timestamped Feedback',
+    body: 'Drop comment pins at the exact moment that needs coaching — no more vague end-of-video notes.',
+  },
+  {
+    icon: ClipboardList,
+    color: '#FF6F61',
+    title: 'Rubric-Based Scoring',
+    body: 'Score every Performance Indicator from the official DECA rubric, right inside the video review.',
+  },
+  {
+    icon: BarChart2,
+    color: '#3B82F6',
+    title: 'Progress Tracking',
+    body: 'Students see their PI scores trend upward across attempts. Teachers spot class-wide weak spots at a glance.',
+  },
+  {
+    icon: Video,
+    color: '#F59E0B',
+    title: 'Record or Upload',
+    body: 'Students record directly in the browser or upload a file from their phone — no extra software needed.',
+  },
+]
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <main>
+      {/* Hero */}
+      <section className="hero section">
+        <div className="hero-shapes" aria-hidden="true">
+          <div className="hero-shape hero-shape--circle" />
+          <div className="hero-shape hero-shape--square" />
+          <div className="hero-shape hero-shape--pill" />
+          <div className="hero-shape hero-shape--triangle" />
+        </div>
+        <div className="container hero-inner">
+          <div className="hero-badge">
+            <span>Built for DECA</span>
+          </div>
+          <h1 className="hero-title">
+            Coach every rep.<br />
+            Not just the <span className="brand-highlight">final score.</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="hero-sub">
+            Students upload roleplay videos. Teachers drop timestamped comments, score Performance Indicators, and track improvement — all in one place.
           </p>
+          <div className="hero-actions">
+            <Link href="/dashboard" className="btn btn-primary">
+              <span className="btn-label">Get started</span>
+              <span className="btn-icon-badge"><ArrowRight size={18} strokeWidth={2.5} /></span>
+            </Link>
+            <Link href="/assignments" className="btn btn-secondary">
+              <span className="btn-label">View assignments</span>
+            </Link>
+          </div>
+
+          <div className="hero-preview">
+            <div className="hero-preview-bar">
+              <span className="hero-preview-dot" style={{ background: '#FF6F61' }} />
+              <span className="hero-preview-dot" style={{ background: '#F59E0B' }} />
+              <span className="hero-preview-dot" style={{ background: '#0D9488' }} />
+            </div>
+            <div className="hero-preview-body">
+              <div className="hero-preview-video">
+                <Video size={48} strokeWidth={1.5} color="var(--muted-foreground)" />
+                <span>Marketing Cluster Roleplay #2</span>
+              </div>
+              <div className="hero-preview-timeline">
+                <div className="hero-timeline-track">
+                  <div className="hero-timeline-fill" style={{ width: '42%' }} />
+                  <div className="hero-timeline-marker" style={{ left: '18%', background: '#0D9488' }} />
+                  <div className="hero-timeline-marker" style={{ left: '31%', background: '#FF6F61' }} />
+                  <div className="hero-timeline-marker" style={{ left: '42%', background: '#3B82F6' }} />
+                </div>
+                <div className="hero-timeline-labels">
+                  <span>0:00</span>
+                  <span>5:00</span>
+                </div>
+              </div>
+              <div className="hero-preview-comment">
+                <span className="hero-preview-tag" style={{ background: '#CCFBF1', color: '#0D9488' }}>✅ Strength</span>
+                <p>&ldquo;Great opening — you immediately identified the customer&apos;s need.&rdquo;</p>
+                <span className="hero-preview-ts">@ 0:54</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Features */}
+      <section className="features section">
+        <div className="container">
+          <div className="features-header">
+            <h2>Everything your team needs to improve</h2>
+            <p>From first attempt to state competition — DECA Coach has the whole workflow covered.</p>
+          </div>
+          <div className="features-grid">
+            {features.map(({ icon: Icon, color, title, body }) => (
+              <div className="card" key={title} style={{ '--card-color': color } as React.CSSProperties}>
+                <div className="card-icon-badge">
+                  <Icon size={24} strokeWidth={2} />
+                </div>
+                <h3 className="card-title">{title}</h3>
+                <p className="card-body">{body}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
-  );
+      </section>
+
+      {/* How it works */}
+      <section className="how section">
+        <div className="container">
+          <div className="how-header">
+            <h2>How it works</h2>
+          </div>
+          <div className="how-steps">
+            {[
+              { num: '01', title: 'Teacher creates an assignment', desc: 'Pick the DECA event, set a due date, attach the official case prompt, and choose which PIs to focus on.' },
+              { num: '02', title: 'Student records & submits', desc: 'Record directly in the browser or upload a file from their phone — then submit against the assignment.' },
+              { num: '03', title: 'Teacher reviews with pinned comments', desc: 'Watch the video and click "Add comment" at any moment. Each pin lands right on the timeline, color-coded by type.' },
+              { num: '04', title: 'Student levels up', desc: 'Get notified when feedback is ready, see every pinned comment, respond to questions, and track PI score trends over time.' },
+            ].map(step => (
+              <div className="how-step" key={step.num}>
+                <div className="how-step-num">{step.num}</div>
+                <div>
+                  <h4 className="how-step-title">{step.title}</h4>
+                  <p className="how-step-desc">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="cta-section section">
+        <div className="container cta-inner">
+          <div className="cta-shapes" aria-hidden="true">
+            <div className="cta-shape cta-shape--a" />
+            <div className="cta-shape cta-shape--b" />
+          </div>
+          <h2>Ready to level up your chapter?</h2>
+          <p>Stop leaving feedback in the margins of a scoresheet. Give your students timestamped, actionable coaching.</p>
+          <Link href="/dashboard" className="btn btn-primary">
+            <span className="btn-label">Get started free</span>
+            <span className="btn-icon-badge"><ArrowRight size={18} strokeWidth={2.5} /></span>
+          </Link>
+        </div>
+      </section>
+    </main>
+  )
 }

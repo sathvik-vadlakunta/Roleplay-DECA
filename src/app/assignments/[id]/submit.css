@@ -1,0 +1,334 @@
+.submit-page {
+  padding-block: 48px 80px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin-bottom: 32px;
+  transition: color 150ms ease;
+}
+
+.back-link:hover {
+  color: var(--foreground);
+}
+
+.submit-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 32px;
+  align-items: start;
+}
+
+/* Main card */
+.submit-card {
+  background: var(--card);
+  border: var(--border-width) solid var(--foreground);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 24px;
+}
+
+.submit-card h2 {
+  font-size: var(--text-2xl);
+  margin-bottom: 10px;
+}
+
+.submit-card > p {
+  margin-bottom: 28px;
+}
+
+/* Upload options */
+.upload-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.upload-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 24px;
+  background: var(--muted);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  text-align: center;
+}
+
+.upload-option:hover {
+  border-color: var(--foreground);
+  box-shadow: var(--shadow-card);
+  transform: translate(-2px, -2px);
+}
+
+.upload-option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--foreground);
+  box-shadow: 3px 3px 0 var(--foreground);
+}
+
+.upload-option-label {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-md);
+  color: var(--foreground);
+}
+
+.upload-option-sub {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+/* Record area */
+.record-area {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.record-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 300px;
+  background: #0F172A;
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--foreground);
+  color: var(--muted-foreground);
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.record-controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.record-btn { font-size: var(--text-sm); }
+
+.record-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+/* Preview area */
+.preview-area {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.preview-video {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 260px;
+  background: var(--muted);
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--border);
+}
+
+.preview-filename {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--foreground);
+}
+
+.preview-size {
+  font-size: var(--text-sm);
+  color: var(--secondary);
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.preview-actions .btn {
+  flex: 1;
+  justify-content: center;
+  font-size: var(--text-sm);
+}
+
+/* Past attempts */
+.past-attempts h3 {
+  font-size: var(--text-xl);
+  margin-bottom: 16px;
+}
+
+.attempts-list {
+  background: var(--card);
+  border: var(--border-width) solid var(--foreground);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.attempt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.attempt-row:last-child {
+  border-bottom: none;
+}
+
+.attempt-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.attempt-date {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+.attempt-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.attempt-score {
+  font-family: var(--font-heading);
+  font-weight: 800;
+}
+
+.attempt-score-val {
+  font-size: var(--text-xl);
+  color: var(--secondary);
+}
+
+.attempt-score-max {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+.attempt-btn {
+  font-size: var(--text-sm);
+  padding: 8px 16px;
+}
+
+/* Sidebar */
+.sidebar-card {
+  background: var(--card);
+  border: var(--border-width) solid var(--foreground);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.sidebar-card-title {
+  font-size: var(--text-lg);
+  line-height: 1.3;
+}
+
+.sidebar-event {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin-top: -12px;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-label {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-instructions {
+  font-size: var(--text-sm);
+  line-height: 1.65;
+}
+
+.pi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pi-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+}
+
+.sidebar-doc-btn {
+  width: 100%;
+  justify-content: center;
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 1024px) {
+  .submit-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .submit-sidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .upload-options {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-actions {
+    flex-direction: column;
+  }
+}
