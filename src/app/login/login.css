@@ -170,3 +170,25 @@
     border-radius: var(--radius-md);
   }
 }
+
+.login-error {
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--accent);
+  padding: 10px 14px;
+  background: #FFE4E1;
+  border-radius: var(--radius-sm);
+  margin: 0;
+}
+
+.login-info {
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--secondary);
+  padding: 10px 14px;
+  background: #CCFBF1;
+  border-radius: var(--radius-sm);
+  margin: 0;
+}

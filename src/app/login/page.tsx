@@ -13,6 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const { signUp, logIn } = useAuth()
   const router = useRouter()
@@ -20,29 +21,36 @@ export default function Login() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setInfo('')
     setLoading(true)
     try {
       if (mode === 'signup') {
         await signUp(name, email, password, role)
+        router.push('/dashboard')
       } else {
         await logIn(email, password)
+        router.push('/dashboard')
       }
-      router.push('/dashboard')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Something went wrong'
-      setError(friendlyError(msg))
+      if (msg === 'CHECK_EMAIL') {
+        setInfo('Account created! Check your email and click the confirmation link, then log in.')
+        setMode('login')
+      } else {
+        setError(friendlyError(msg))
+      }
     } finally {
       setLoading(false)
     }
   }
 
   function friendlyError(msg: string) {
-    if (msg.includes('already registered') || msg.includes('User already registered')) return 'An account with that email already exists.'
+    if (msg.includes('already registered') || msg.includes('User already registered')) return 'An account with that email already exists. Try logging in instead.'
     if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) return 'Incorrect email or password.'
-    if (msg.includes('Email not confirmed') || msg.includes('not confirmed')) return 'Please confirm your email first, then log in.'
+    if (msg.includes('Email not confirmed') || msg.includes('not confirmed')) return 'Please confirm your email first — check your inbox for the confirmation link.'
     if (msg.includes('Password should') || msg.includes('at least')) return 'Password must be at least 6 characters.'
     if (msg.includes('rate limit') || msg.includes('Too many')) return 'Too many attempts — wait a minute and try again.'
-    return 'Something went wrong. Please try again.'
+    return msg
   }
 
   return (
@@ -126,6 +134,7 @@ export default function Login() {
             />
           </div>
 
+          {info  && <p className="login-info">{info}</p>}
           {error && <p className="login-error">{error}</p>}
 
           <button className="login-submit btn btn-primary" type="submit" disabled={loading}>

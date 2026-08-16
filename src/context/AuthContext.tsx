@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 
@@ -28,7 +28,9 @@ export function useAuth() {
 }
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
+  // Memoize so the client is created once, not on every render
+  const supabase = useMemo(() => createClient(), [])
+
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -43,19 +45,29 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [supabase])
 
   useEffect(() => {
+    let mounted = true
+
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
-      if (user) fetchProfile(user.id).finally(() => setLoading(false))
-      else setLoading(false)
+      if (!mounted) return
+      setUser(user ?? null)
+      if (user) {
+        fetchProfile(user.id).finally(() => { if (mounted) setLoading(false) })
+      } else {
+        setLoading(false)
+      }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
-      else setProfile(null)
+      else { setProfile(null); setLoading(false) }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [supabase, fetchProfile])
 
   async function signUp(name: string, email: string, password: string, role: 'student' | 'teacher') {
@@ -65,9 +77,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       options: { data: { full_name: name, role } },
     })
     if (error) throw error
-    // Profile is created via DB trigger — wait briefly then fetch
+    // If email confirmation is ON, session is null here — tell the caller
+    if (!data.session) throw new Error('CHECK_EMAIL')
     if (data.user) {
-      await new Promise(r => setTimeout(r, 800))
+      await new Promise(r => setTimeout(r, 600))
       await fetchProfile(data.user.id)
     }
   }
