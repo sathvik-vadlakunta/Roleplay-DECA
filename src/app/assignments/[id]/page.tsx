@@ -1,7 +1,7 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { Upload, Video, Mic, RotateCcw, Send, ChevronLeft, FileText, Clock } from 'lucide-react'
+import { Upload, Video, RotateCcw, Send, ChevronLeft, FileText, Clock, Square, Circle } from 'lucide-react'
 import './submit.css'
 
 const ASSIGNMENT = {
@@ -22,18 +22,136 @@ const PAST_ATTEMPTS = [
   { num: 1, date: 'Aug 5, 2026', score: 3.2, status: 'reviewed' },
 ]
 
+type Mode = 'idle' | 'record' | 'upload' | 'preview'
+type RecordState = 'camera' | 'recording' | 'done'
+
+function fmtDuration(s: number) {
+  const m = Math.floor(s / 60)
+  const sec = s % 60
+  return `${m}:${sec.toString().padStart(2, '0')}`
+}
+
 export default function SubmitAssignment() {
-  const [mode, setMode] = useState<'idle' | 'record' | 'upload' | 'preview'>('idle')
+  const [mode, setMode] = useState<Mode>('idle')
+  const [recordState, setRecordState] = useState<RecordState>('camera')
   const [fileName, setFileName] = useState('')
+  const [previewUrl, setPreviewUrl] = useState('')
+  const [elapsed, setElapsed] = useState(0)
+  const [camError, setCamError] = useState('')
+
   const fileRef = useRef<HTMLInputElement>(null)
+  const liveVideoRef = useRef<HTMLVideoElement>(null)
+  const previewVideoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Start camera as soon as record mode is entered
+  useEffect(() => {
+    if (mode !== 'record') return
+
+    setCamError('')
+    setRecordState('camera')
+    setElapsed(0)
+
+    navigator.mediaDevices
+      .getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true })
+      .then(stream => {
+        streamRef.current = stream
+        if (liveVideoRef.current) {
+          liveVideoRef.current.srcObject = stream
+        }
+      })
+      .catch(err => {
+        const msg =
+          err.name === 'NotAllowedError' ? 'Camera permission denied. Allow access in your browser settings and try again.' :
+          err.name === 'NotFoundError'   ? 'No camera or microphone found on this device.' :
+          'Could not access camera: ' + err.message
+        setCamError(msg)
+      })
+
+    return () => stopCamera()
+  }, [mode])
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
+    if (timerRef.current) clearInterval(timerRef.current)
+  }, [])
+
+  function startRecording() {
+    if (!streamRef.current) return
+    chunksRef.current = []
+
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+      ? 'video/webm;codecs=vp9'
+      : MediaRecorder.isTypeSupported('video/webm')
+      ? 'video/webm'
+      : 'video/mp4'
+
+    const recorder = new MediaRecorder(streamRef.current, { mimeType })
+    recorderRef.current = recorder
+
+    recorder.ondataavailable = e => {
+      if (e.data.size > 0) chunksRef.current.push(e.data)
+    }
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: mimeType })
+      const url = URL.createObjectURL(blob)
+      setPreviewUrl(url)
+      setFileName(`recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`)
+      stopCamera()
+      setRecordState('done')
+    }
+
+    recorder.start(250) // collect chunks every 250ms
+    setRecordState('recording')
+
+    timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000)
+  }
+
+  function stopRecording() {
+    if (timerRef.current) clearInterval(timerRef.current)
+    recorderRef.current?.stop()
+  }
+
+  function finishRecording() {
+    // move to the preview mode after the recorder.onstop fires
+    setMode('preview')
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
-    if (f) {
-      setFileName(f.name)
+    if (!f) return
+    const url = URL.createObjectURL(f)
+    setPreviewUrl(url)
+    setFileName(f.name)
+    setMode('preview')
+  }
+
+  function reset() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl('')
+    setFileName('')
+    setElapsed(0)
+    setMode('idle')
+  }
+
+  // Wire preview video src when url arrives
+  useEffect(() => {
+    if (previewVideoRef.current && previewUrl) {
+      previewVideoRef.current.src = previewUrl
+    }
+  }, [previewUrl])
+
+  // When recordState hits 'done', switch to preview mode
+  useEffect(() => {
+    if (recordState === 'done' && previewUrl) {
       setMode('preview')
     }
-  }
+  }, [recordState, previewUrl])
 
   return (
     <main className="submit-page">
@@ -44,12 +162,12 @@ export default function SubmitAssignment() {
         </Link>
 
         <div className="submit-layout">
-          {/* Left: video upload */}
           <div className="submit-main">
             <div className="submit-card">
               <h2>Submit your roleplay</h2>
-              <p>Record directly in the browser or upload a video file (MP4, MOV, WEBM &mdash; up to 500MB).</p>
+              <p>Record directly in the browser or upload a video file (MP4, MOV, WEBM &mdash; up to 500 MB).</p>
 
+              {/* ── IDLE: choose method ── */}
               {mode === 'idle' && (
                 <div className="upload-options">
                   <button className="upload-option" onClick={() => setMode('record')}>
@@ -57,7 +175,7 @@ export default function SubmitAssignment() {
                       <Video size={28} strokeWidth={2} color="white" />
                     </div>
                     <div className="upload-option-label">Record now</div>
-                    <div className="upload-option-sub">Use your webcam & mic</div>
+                    <div className="upload-option-sub">Use your webcam &amp; mic</div>
                   </button>
                   <button className="upload-option" onClick={() => fileRef.current?.click()}>
                     <div className="upload-option-icon" style={{ background: '#3B82F6' }}>
@@ -76,36 +194,78 @@ export default function SubmitAssignment() {
                 </div>
               )}
 
+              {/* ── RECORD: live camera ── */}
               {mode === 'record' && (
                 <div className="record-area">
-                  <div className="record-preview">
-                    <Mic size={48} strokeWidth={1.5} color="var(--muted-foreground)" />
-                    <span>Camera preview will appear here</span>
-                    <div className="record-controls">
-                      <button className="btn btn-primary record-btn">
-                        <span className="btn-label">Start recording</span>
-                        <span className="btn-icon-badge"><Video size={16} strokeWidth={2.5} /></span>
-                      </button>
-                      <button className="btn btn-secondary" onClick={() => setMode('idle')}>
-                        Cancel
-                      </button>
+                  {camError ? (
+                    <div className="cam-error">
+                      <p>{camError}</p>
+                      <button className="btn btn-secondary" onClick={reset}>Go back</button>
                     </div>
-                  </div>
-                  <p className="record-tip">
-                    <Clock size={14} /> Tip: DECA roleplays are typically 5–10 min. A countdown timer will appear when you start.
-                  </p>
+                  ) : (
+                    <>
+                      <div className="record-preview">
+                        <video
+                          ref={liveVideoRef}
+                          autoPlay
+                          muted
+                          playsInline
+                          className="live-video"
+                        />
+                        {recordState === 'recording' && (
+                          <div className="record-badge">
+                            <span className="record-dot" />
+                            REC {fmtDuration(elapsed)}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="record-controls">
+                        {recordState === 'camera' && (
+                          <>
+                            <button className="btn btn-primary" onClick={startRecording}>
+                              <span className="btn-label">Start recording</span>
+                              <span className="btn-icon-badge"><Circle size={14} strokeWidth={2.5} /></span>
+                            </button>
+                            <button className="btn btn-secondary" onClick={reset}>
+                              Cancel
+                            </button>
+                          </>
+                        )}
+                        {recordState === 'recording' && (
+                          <button className="btn btn-primary stop-btn" onClick={stopRecording}>
+                            <span className="btn-label">Stop recording</span>
+                            <span className="btn-icon-badge"><Square size={14} strokeWidth={2.5} /></span>
+                          </button>
+                        )}
+                      </div>
+
+                      {recordState === 'camera' && (
+                        <p className="record-tip">
+                          <Clock size={14} />
+                          DECA roleplays are typically 5–10 min. A timer will appear when you start.
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 
+              {/* ── PREVIEW: review before submitting ── */}
               {mode === 'preview' && (
                 <div className="preview-area">
-                  <div className="preview-video">
-                    <Video size={48} strokeWidth={1.5} color="var(--muted-foreground)" />
+                  <video
+                    ref={previewVideoRef}
+                    controls
+                    playsInline
+                    className="preview-video-player"
+                  />
+                  <div className="preview-filename-row">
+                    <Video size={16} strokeWidth={2} color="var(--secondary)" />
                     <span className="preview-filename">{fileName}</span>
-                    <span className="preview-size">Ready to submit</span>
                   </div>
                   <div className="preview-actions">
-                    <button className="btn btn-secondary" onClick={() => { setMode('idle'); setFileName('') }}>
+                    <button className="btn btn-secondary" onClick={reset}>
                       <span className="btn-label">Re-record / change file</span>
                       <span className="btn-icon-badge"><RotateCcw size={14} strokeWidth={2.5} /></span>
                     </button>
