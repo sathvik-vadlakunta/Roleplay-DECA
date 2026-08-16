@@ -143,20 +143,29 @@ export default function ClassesPage() {
     load()
   }
 
-  if (!user || !profile) return null
+  if (!user) return (
+    <main className="classes-page">
+      <div className="container">
+        <div className="classes-loading">Loading…</div>
+      </div>
+    </main>
+  )
+
+  // Profile may still be fetching — default to student join view while waiting
+  const resolvedTeacher = profile?.role === 'teacher'
 
   return (
     <main className="classes-page">
       <div className="container">
         <div className="classes-header">
           <div>
-            <h1>{isTeacher ? 'Your Classes' : 'My Class'}</h1>
-            <p>{isTeacher
+            <h1>{resolvedTeacher ? 'Your Classes' : 'Classes'}</h1>
+            <p>{resolvedTeacher
               ? 'Create classes and share join codes with your students.'
               : 'Enter a join code from your teacher to connect to your class.'
             }</p>
           </div>
-          {isTeacher && (
+          {resolvedTeacher && (
             <button className="btn btn-primary" onClick={() => setShowCreate(v => !v)}>
               <span className="btn-label">New class</span>
               <span className="btn-icon-badge"><Plus size={16} strokeWidth={2.5} /></span>
@@ -165,7 +174,7 @@ export default function ClassesPage() {
         </div>
 
         {/* ── TEACHER VIEW ── */}
-        {isTeacher && (
+        {resolvedTeacher && (
           <>
             {showCreate && (
               <div className="create-card">
@@ -244,7 +253,7 @@ export default function ClassesPage() {
         )}
 
         {/* ── STUDENT VIEW ── */}
-        {!isTeacher && (
+        {!resolvedTeacher && (
           <>
             {myClass ? (
               <div className="my-class-card">
