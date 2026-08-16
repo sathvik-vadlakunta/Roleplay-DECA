@@ -64,6 +64,20 @@
   font-size: var(--text-sm);
 }
 
+.navbar-role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  background: var(--muted);
+  border: var(--border-width) solid var(--foreground);
+  border-radius: var(--radius-full);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  color: var(--foreground);
+  box-shadow: 2px 2px 0 var(--border);
+}
+
 .navbar-toggle {
   display: none;
   color: var(--foreground);
