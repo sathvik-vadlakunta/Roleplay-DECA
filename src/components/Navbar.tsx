@@ -9,6 +9,7 @@ import './Navbar.css'
 const NAV_LINKS = [
   { label: 'Dashboard',   href: '/dashboard' },
   { label: 'Assignments', href: '/assignments' },
+  { label: 'Classes',     href: '/classes' },
 ]
 
 export default function Navbar() {

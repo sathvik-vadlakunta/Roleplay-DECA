@@ -1,28 +1,13 @@
 'use client'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, use } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Upload, Video, RotateCcw, Send, ChevronLeft, FileText, Clock, Square, Circle } from 'lucide-react'
+import { Upload, Video, RotateCcw, Send, ChevronLeft, FileText, Clock, Square, Circle, CheckCircle } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import { createClient } from '@/lib/supabase/client'
 import './submit.css'
 
-const ASSIGNMENT = {
-  id: '1',
-  title: 'Marketing Cluster Roleplay #2',
-  event: 'Marketing Management',
-  due: 'Aug 18, 2026',
-  pis: [
-    { id: 'PI 2.1', label: 'Identify customer needs' },
-    { id: 'PI 2.3', label: 'Ask clarifying questions' },
-    { id: 'PI 3.4', label: 'Close the sale professionally' },
-  ],
-  instructions: 'You are a marketing consultant brought in to advise a mid-size retail client. Their sales have dropped 15% YoY. Identify the root cause, propose a marketing strategy, and handle judge follow-up questions. You have 10 minutes to present.',
-  casePromptUrl: '#',
-}
-
-const PAST_ATTEMPTS = [
-  { num: 1, date: 'Aug 5, 2026', score: 3.2, status: 'reviewed' },
-]
-
-type Mode = 'idle' | 'record' | 'upload' | 'preview'
+type Mode = 'idle' | 'record' | 'upload' | 'preview' | 'uploading' | 'success'
 type RecordState = 'camera' | 'recording' | 'done'
 
 function fmtDuration(s: number) {
@@ -31,13 +16,22 @@ function fmtDuration(s: number) {
   return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
-export default function SubmitAssignment() {
+export default function SubmitAssignment({ params }: { params: Promise<{ id: string }> }) {
+  const { id: assignmentId } = use(params)
+  const { user } = useAuth()
+  const router = useRouter()
+  const supabase = createClient()
+
   const [mode, setMode] = useState<Mode>('idle')
   const [recordState, setRecordState] = useState<RecordState>('camera')
   const [fileName, setFileName] = useState('')
   const [previewUrl, setPreviewUrl] = useState('')
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [camError, setCamError] = useState('')
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [submitError, setSubmitError] = useState('')
+  const [pastAttempts, setPastAttempts] = useState<{ num: number; date: string; score: number | null; status: string; id: string }[]>([])
 
   const fileRef = useRef<HTMLInputElement>(null)
   const liveVideoRef = useRef<HTMLVideoElement>(null)
@@ -47,10 +41,32 @@ export default function SubmitAssignment() {
   const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Start camera as soon as record mode is entered
+  // Load past attempts for this assignment
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('submissions')
+      .select('id, attempt_number, created_at, status, scores(score)')
+      .eq('assignment_id', assignmentId)
+      .eq('student_id', user.id)
+      .order('attempt_number', { ascending: true })
+      .then(({ data }) => {
+        if (!data) return
+        setPastAttempts(data.map((s: { id: string; attempt_number: number; created_at: string; status: string; scores: { score: number }[] }) => ({
+          id: s.id,
+          num: s.attempt_number,
+          date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          status: s.status,
+          score: s.scores?.length
+            ? s.scores.reduce((a: number, b: { score: number }) => a + b.score, 0) / s.scores.length
+            : null,
+        })))
+      })
+  }, [user, assignmentId, supabase])
+
+  // Start camera when record mode is entered
   useEffect(() => {
     if (mode !== 'record') return
-
     setCamError('')
     setRecordState('camera')
     setElapsed(0)
@@ -59,9 +75,7 @@ export default function SubmitAssignment() {
       .getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true })
       .then(stream => {
         streamRef.current = stream
-        if (liveVideoRef.current) {
-          liveVideoRef.current.srcObject = stream
-        }
+        if (liveVideoRef.current) liveVideoRef.current.srcObject = stream
       })
       .catch(err => {
         const msg =
@@ -83,32 +97,25 @@ export default function SubmitAssignment() {
   function startRecording() {
     if (!streamRef.current) return
     chunksRef.current = []
-
-    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-      ? 'video/webm;codecs=vp9'
-      : MediaRecorder.isTypeSupported('video/webm')
-      ? 'video/webm'
-      : 'video/mp4'
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9'
+      : MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : 'video/mp4'
 
     const recorder = new MediaRecorder(streamRef.current, { mimeType })
     recorderRef.current = recorder
 
-    recorder.ondataavailable = e => {
-      if (e.data.size > 0) chunksRef.current.push(e.data)
-    }
-
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
     recorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: mimeType })
       const url = URL.createObjectURL(blob)
+      setVideoBlob(blob)
       setPreviewUrl(url)
       setFileName(`recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`)
       stopCamera()
       setRecordState('done')
     }
 
-    recorder.start(250) // collect chunks every 250ms
+    recorder.start(250)
     setRecordState('recording')
-
     timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000)
   }
 
@@ -117,16 +124,19 @@ export default function SubmitAssignment() {
     recorderRef.current?.stop()
   }
 
-  function finishRecording() {
-    // move to the preview mode after the recorder.onstop fires
-    setMode('preview')
-  }
+  useEffect(() => {
+    if (previewVideoRef.current && previewUrl) previewVideoRef.current.src = previewUrl
+  }, [previewUrl])
+
+  useEffect(() => {
+    if (recordState === 'done' && previewUrl) setMode('preview')
+  }, [recordState, previewUrl])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
-    const url = URL.createObjectURL(f)
-    setPreviewUrl(url)
+    setVideoBlob(f)
+    setPreviewUrl(URL.createObjectURL(f))
     setFileName(f.name)
     setMode('preview')
   }
@@ -135,23 +145,56 @@ export default function SubmitAssignment() {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setPreviewUrl('')
     setFileName('')
+    setVideoBlob(null)
     setElapsed(0)
+    setSubmitError('')
     setMode('idle')
   }
 
-  // Wire preview video src when url arrives
-  useEffect(() => {
-    if (previewVideoRef.current && previewUrl) {
-      previewVideoRef.current.src = previewUrl
-    }
-  }, [previewUrl])
+  async function handleSubmit() {
+    if (!videoBlob || !user) return
+    setSubmitError('')
+    setMode('uploading')
+    setUploadProgress(0)
 
-  // When recordState hits 'done', switch to preview mode
-  useEffect(() => {
-    if (recordState === 'done' && previewUrl) {
+    try {
+      const nextAttempt = pastAttempts.length + 1
+      const ext = videoBlob.type.includes('mp4') ? 'mp4' : 'webm'
+      const storagePath = `${user.id}/${assignmentId}/attempt_${nextAttempt}.${ext}`
+
+      // Upload video to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(storagePath, videoBlob, {
+          contentType: videoBlob.type,
+          upsert: true,
+        })
+
+      if (uploadError) throw uploadError
+
+      setUploadProgress(80)
+
+      // Create submission record
+      const { error: insertError } = await supabase
+        .from('submissions')
+        .insert({
+          assignment_id: assignmentId,
+          student_id: user.id,
+          attempt_number: nextAttempt,
+          video_url: storagePath,
+          status: 'submitted',
+        })
+
+      if (insertError) throw insertError
+
+      setUploadProgress(100)
+      setMode('success')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Upload failed'
+      setSubmitError(msg)
       setMode('preview')
     }
-  }, [recordState, previewUrl])
+  }
 
   return (
     <main className="submit-page">
@@ -167,7 +210,7 @@ export default function SubmitAssignment() {
               <h2>Submit your roleplay</h2>
               <p>Record directly in the browser or upload a video file (MP4, MOV, WEBM &mdash; up to 500 MB).</p>
 
-              {/* ── IDLE: choose method ── */}
+              {/* ── IDLE ── */}
               {mode === 'idle' && (
                 <div className="upload-options">
                   <button className="upload-option" onClick={() => setMode('record')}>
@@ -184,17 +227,11 @@ export default function SubmitAssignment() {
                     <div className="upload-option-label">Upload file</div>
                     <div className="upload-option-sub">MP4, MOV, or WEBM</div>
                   </button>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="video/*"
-                    style={{ display: 'none' }}
-                    onChange={handleFileChange}
-                  />
+                  <input ref={fileRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={handleFileChange} />
                 </div>
               )}
 
-              {/* ── RECORD: live camera ── */}
+              {/* ── RECORD ── */}
               {mode === 'record' && (
                 <div className="record-area">
                   {camError ? (
@@ -205,13 +242,7 @@ export default function SubmitAssignment() {
                   ) : (
                     <>
                       <div className="record-preview">
-                        <video
-                          ref={liveVideoRef}
-                          autoPlay
-                          muted
-                          playsInline
-                          className="live-video"
-                        />
+                        <video ref={liveVideoRef} autoPlay muted playsInline className="live-video" />
                         {recordState === 'recording' && (
                           <div className="record-badge">
                             <span className="record-dot" />
@@ -219,7 +250,6 @@ export default function SubmitAssignment() {
                           </div>
                         )}
                       </div>
-
                       <div className="record-controls">
                         {recordState === 'camera' && (
                           <>
@@ -227,9 +257,7 @@ export default function SubmitAssignment() {
                               <span className="btn-label">Start recording</span>
                               <span className="btn-icon-badge"><Circle size={14} strokeWidth={2.5} /></span>
                             </button>
-                            <button className="btn btn-secondary" onClick={reset}>
-                              Cancel
-                            </button>
+                            <button className="btn btn-secondary" onClick={reset}>Cancel</button>
                           </>
                         )}
                         {recordState === 'recording' && (
@@ -239,7 +267,6 @@ export default function SubmitAssignment() {
                           </button>
                         )}
                       </div>
-
                       {recordState === 'camera' && (
                         <p className="record-tip">
                           <Clock size={14} />
@@ -251,27 +278,53 @@ export default function SubmitAssignment() {
                 </div>
               )}
 
-              {/* ── PREVIEW: review before submitting ── */}
+              {/* ── PREVIEW ── */}
               {mode === 'preview' && (
                 <div className="preview-area">
-                  <video
-                    ref={previewVideoRef}
-                    controls
-                    playsInline
-                    className="preview-video-player"
-                  />
+                  <video ref={previewVideoRef} controls playsInline className="preview-video-player" />
                   <div className="preview-filename-row">
                     <Video size={16} strokeWidth={2} color="var(--secondary)" />
                     <span className="preview-filename">{fileName}</span>
                   </div>
+                  {submitError && <p className="submit-error">{submitError}</p>}
                   <div className="preview-actions">
                     <button className="btn btn-secondary" onClick={reset}>
                       <span className="btn-label">Re-record / change file</span>
                       <span className="btn-icon-badge"><RotateCcw size={14} strokeWidth={2.5} /></span>
                     </button>
-                    <button className="btn btn-primary">
+                    <button className="btn btn-primary" onClick={handleSubmit}>
                       <span className="btn-label">Submit attempt</span>
                       <span className="btn-icon-badge"><Send size={14} strokeWidth={2.5} /></span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── UPLOADING ── */}
+              {mode === 'uploading' && (
+                <div className="uploading-area">
+                  <div className="upload-progress-label">Uploading your video…</div>
+                  <div className="upload-progress-track">
+                    <div className="upload-progress-fill" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                  <p className="upload-progress-sub">Don&apos;t close this tab</p>
+                </div>
+              )}
+
+              {/* ── SUCCESS ── */}
+              {mode === 'success' && (
+                <div className="success-area">
+                  <div className="success-icon">
+                    <CheckCircle size={48} strokeWidth={1.5} color="var(--secondary)" />
+                  </div>
+                  <h3>Submitted!</h3>
+                  <p>Your roleplay has been submitted. You&apos;ll get a notification when your teacher leaves feedback.</p>
+                  <div className="success-actions">
+                    <Link href="/dashboard" className="btn btn-primary">
+                      <span className="btn-label">Go to dashboard</span>
+                    </Link>
+                    <button className="btn btn-secondary" onClick={reset}>
+                      <span className="btn-label">Submit another attempt</span>
                     </button>
                   </div>
                 </div>
@@ -279,23 +332,25 @@ export default function SubmitAssignment() {
             </div>
 
             {/* Past attempts */}
-            {PAST_ATTEMPTS.length > 0 && (
+            {pastAttempts.length > 0 && (
               <div className="past-attempts">
                 <h3>Previous attempts</h3>
                 <div className="attempts-list">
-                  {PAST_ATTEMPTS.map(a => (
-                    <div className="attempt-row" key={a.num}>
+                  {pastAttempts.map(a => (
+                    <div className="attempt-row" key={a.id}>
                       <div>
                         <div className="attempt-title">Attempt {a.num}</div>
                         <div className="attempt-date">{a.date}</div>
                       </div>
                       <div className="attempt-right">
-                        <div className="attempt-score">
-                          <span className="attempt-score-val">{a.score}</span>
-                          <span className="attempt-score-max">/ 5.0</span>
-                        </div>
-                        <span className="badge badge-reviewed">Reviewed</span>
-                        <Link href={`/submissions/${ASSIGNMENT.id}`} className="btn btn-secondary attempt-btn">
+                        {a.score !== null && (
+                          <div className="attempt-score">
+                            <span className="attempt-score-val">{a.score.toFixed(1)}</span>
+                            <span className="attempt-score-max">/ 5.0</span>
+                          </div>
+                        )}
+                        <span className={`badge badge-${a.status}`}>{a.status}</span>
+                        <Link href={`/submissions/${a.id}`} className="btn btn-secondary attempt-btn">
                           View feedback
                         </Link>
                       </div>
@@ -306,36 +361,26 @@ export default function SubmitAssignment() {
             )}
           </div>
 
-          {/* Right: assignment details */}
+          {/* Sidebar */}
           <aside className="submit-sidebar">
             <div className="sidebar-card">
               <div className="sidebar-card-top">
                 <span className="badge badge-pending">
                   <Clock size={12} strokeWidth={2.5} />
-                  Due {ASSIGNMENT.due}
+                  Assignment #{assignmentId}
                 </span>
               </div>
-              <h3 className="sidebar-card-title">{ASSIGNMENT.title}</h3>
-              <div className="sidebar-event">{ASSIGNMENT.event}</div>
+              <h3 className="sidebar-card-title">Roleplay Assignment</h3>
+              <div className="sidebar-event">DECA Competitive Event</div>
 
               <div className="sidebar-section">
                 <div className="sidebar-label">Instructions</div>
-                <p className="sidebar-instructions">{ASSIGNMENT.instructions}</p>
+                <p className="sidebar-instructions">
+                  Record your roleplay and submit it for teacher feedback. Make sure your audio and video are clear before submitting.
+                </p>
               </div>
 
-              <div className="sidebar-section">
-                <div className="sidebar-label">Performance Indicators</div>
-                <ul className="pi-list">
-                  {ASSIGNMENT.pis.map(pi => (
-                    <li key={pi.id} className="pi-list-item">
-                      <span className="pi-tag">{pi.id}</span>
-                      <span>{pi.label}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <a href={ASSIGNMENT.casePromptUrl} className="btn btn-secondary sidebar-doc-btn">
+              <a href="#" className="btn btn-secondary sidebar-doc-btn">
                 <span className="btn-label">Download case prompt</span>
                 <span className="btn-icon-badge"><FileText size={14} strokeWidth={2.5} /></span>
               </a>

@@ -1,0 +1,313 @@
+.classes-page {
+  padding-block: 64px;
+}
+
+.classes-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.classes-header h1 {
+  font-size: var(--text-3xl);
+  margin-bottom: 6px;
+}
+
+/* Create card */
+.create-card {
+  background: var(--card);
+  border: var(--border-width) solid var(--foreground);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  box-shadow: var(--shadow-pop);
+  margin-bottom: 32px;
+}
+
+.create-card h3 {
+  font-size: var(--text-xl);
+  margin-bottom: 20px;
+}
+
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 400px;
+}
+
+.create-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.form-error {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--accent);
+  background: #FFE4E1;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin: 0;
+}
+
+.form-success {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--secondary);
+  background: #CCFBF1;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin: 0;
+}
+
+/* Loading / empty */
+.classes-loading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--muted-foreground);
+  padding: 48px 0;
+  text-align: center;
+}
+
+.classes-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 72px 24px;
+  text-align: center;
+}
+
+.classes-empty p {
+  max-width: 380px;
+}
+
+/* Classes grid */
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.class-card {
+  background: var(--card);
+  border: var(--border-width) solid var(--foreground);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.class-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--border);
+}
+
+.class-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.class-name {
+  font-size: var(--text-lg);
+}
+
+.student-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  background: var(--muted);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Join code row */
+.join-code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.join-code-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--foreground);
+  color: white;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: var(--text-xl);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  letter-spacing: 0.1em;
+  flex: 1;
+}
+
+.join-code-text {
+  letter-spacing: 0.15em;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--foreground);
+  background: var(--muted);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: var(--foreground);
+  color: white;
+}
+
+.copy-btn--done {
+  background: var(--secondary);
+  border-color: var(--secondary);
+  color: white;
+}
+
+.regen-btn {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  align-self: flex-start;
+  transition: color 150ms ease;
+}
+
+.regen-btn:hover {
+  color: var(--foreground);
+}
+
+/* ── STUDENT VIEW ── */
+
+.my-class-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: var(--card);
+  border: var(--border-width) solid var(--foreground);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow-card);
+  max-width: 480px;
+}
+
+.my-class-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  background: var(--secondary);
+  border: var(--border-width) solid var(--foreground);
+  box-shadow: 3px 3px 0 var(--foreground);
+  flex-shrink: 0;
+}
+
+.my-class-label {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  margin-bottom: 4px;
+}
+
+.my-class-name {
+  font-size: var(--text-2xl);
+}
+
+/* Join card */
+.join-card {
+  background: var(--card);
+  border: var(--border-width) solid var(--foreground);
+  border-radius: var(--radius-lg);
+  padding: 48px 40px;
+  box-shadow: var(--shadow-pop);
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.join-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-md);
+  background: #FFE4E1;
+  border: var(--border-width) solid var(--foreground);
+  box-shadow: 3px 3px 0 var(--foreground);
+}
+
+.join-card h3 {
+  font-size: var(--text-2xl);
+}
+
+.join-card p {
+  max-width: 340px;
+}
+
+.join-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.join-code-input {
+  font-family: var(--font-heading) !important;
+  font-weight: 800 !important;
+  font-size: var(--text-xl) !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.join-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .classes-header { flex-direction: column; }
+  .classes-grid { grid-template-columns: 1fr; }
+  .join-card { padding: 32px 24px; }
+}
