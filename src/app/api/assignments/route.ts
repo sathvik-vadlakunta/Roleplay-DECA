@@ -1,26 +1,62 @@
 import { NextResponse } from 'next/server'
 import { adminClient, getAuthUser } from '@/lib/supabase/admin'
 
-// GET /api/assignments?class_id=X — list assignments for a class (student view)
+// GET /api/assignments — for students: their class assignments + submission status
+//                      — for teachers: pass ?class_id=X
 export async function GET(req: Request) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json([], { status: 401 })
 
-  const { searchParams } = new URL(req.url)
-  const classId = searchParams.get('class_id')
-  if (!classId) return NextResponse.json([], { status: 400 })
-
   const admin = adminClient()
-  const { data } = await admin
+  const { searchParams } = new URL(req.url)
+  const paramClassId = searchParams.get('class_id')
+
+  // Resolve class_id — use param if given, otherwise look up student's class
+  let classId = paramClassId
+  if (!classId) {
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('class_id')
+      .eq('id', user.id)
+      .single()
+    classId = profile?.class_id ?? null
+  }
+
+  if (!classId) return NextResponse.json([])
+
+  const { data: assignments } = await admin
     .from('assignments')
     .select('id, title, description, event_type, due_date, created_at')
     .eq('class_id', classId)
     .order('created_at', { ascending: false })
 
-  return NextResponse.json(data ?? [])
+  if (!assignments?.length) return NextResponse.json([])
+
+  // Fetch this student's latest submission per assignment
+  const { data: submissions } = await admin
+    .from('submissions')
+    .select('id, assignment_id, attempt_number, status, created_at')
+    .eq('student_id', user.id)
+    .in('assignment_id', assignments.map(a => a.id))
+    .order('attempt_number', { ascending: false })
+
+  // Latest submission per assignment
+  const latestByAssignment: Record<string, { id: string; status: string; attempt_number: number }> = {}
+  for (const s of submissions ?? []) {
+    if (!latestByAssignment[s.assignment_id]) {
+      latestByAssignment[s.assignment_id] = { id: s.id, status: s.status, attempt_number: s.attempt_number }
+    }
+  }
+
+  return NextResponse.json(
+    assignments.map(a => ({
+      ...a,
+      submission: latestByAssignment[a.id] ?? null,
+    }))
+  )
 }
 
-// POST /api/assignments — create a new assignment
+// POST /api/assignments — create a new assignment (teachers only)
 export async function POST(req: Request) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -43,7 +79,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'class_id and name are required' }, { status: 400 })
   }
 
-  // Verify teacher owns this class
   const { data: cls } = await admin
     .from('classes')
     .select('teacher_id')

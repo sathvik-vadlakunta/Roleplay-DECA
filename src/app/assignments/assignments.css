@@ -113,6 +113,46 @@
   transition: width 600ms var(--ease-bounce);
 }
 
+.assignment-card-desc {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.assignment-card-due--past {
+  color: var(--accent);
+}
+
+.assignment-card-attempts {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  color: var(--secondary);
+}
+
+.assignments-loading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--muted-foreground);
+  padding: 64px 0;
+  text-align: center;
+}
+
+.assignments-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 72px 24px;
+  text-align: center;
+  color: var(--muted-foreground);
+}
+
 .assignment-card-actions {
   margin-top: 4px;
 }
