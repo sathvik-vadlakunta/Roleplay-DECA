@@ -36,11 +36,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true)
 
   const fetchProfile = useCallback(async (uid: string, fallbackUser?: User) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, full_name, role, class_id')
       .eq('id', uid)
       .single()
+
+    console.log('[fetchProfile]', { uid, data, error })
 
     if (data) {
       setProfile(data)
