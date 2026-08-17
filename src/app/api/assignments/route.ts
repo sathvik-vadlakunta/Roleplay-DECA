@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const admin = adminClient()
   const { data } = await admin
     .from('assignments')
-    .select('id, name, description, event_type, due_date, created_at')
+    .select('id, title, description, event_type, due_date, created_at')
     .eq('class_id', classId)
     .order('created_at', { ascending: false })
 
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     .from('assignments')
     .insert({
       class_id,
-      name: name.trim(),
+      title: name.trim(),
       description: description?.trim() ?? '',
       event_type: event_type?.trim() ?? '',
       due_date: due_date || null,

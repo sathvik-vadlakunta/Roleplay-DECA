@@ -17,7 +17,7 @@ type StudentSummary = {
 
 type AssignmentDetail = {
   id: string
-  name: string
+  title: string
   description: string
   event_type: string
   due_date: string | null
@@ -96,7 +96,7 @@ export default function SubmissionsView({
         <div className="subs-header">
           <div>
             {asgn.event_type && <div className="subs-event-label">{asgn.event_type}</div>}
-            <h1 className="subs-title">{asgn.name}</h1>
+            <h1 className="subs-title">{asgn.title}</h1>
             {asgn.description && <p className="subs-desc">{asgn.description}</p>}
           </div>
           <div className="subs-due">

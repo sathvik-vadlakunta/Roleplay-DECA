@@ -30,7 +30,7 @@ export async function GET(
   // Assignments for this class
   const { data: assignments } = await admin
     .from('assignments')
-    .select('id, name, description, event_type, due_date, created_at')
+    .select('id, title, description, event_type, due_date, created_at')
     .eq('class_id', id)
     .order('created_at', { ascending: false })
 

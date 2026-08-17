@@ -4,7 +4,7 @@ import { adminClient, getAuthUser } from '@/lib/supabase/admin'
 async function verifyTeacherOwnsAssignment(admin: ReturnType<typeof adminClient>, assignmentId: string, userId: string) {
   const { data: assignment } = await admin
     .from('assignments')
-    .select('id, class_id, name, description, event_type, due_date, created_at')
+    .select('id, class_id, title, description, event_type, due_date, created_at')
     .eq('id', assignmentId)
     .single()
 
@@ -94,7 +94,7 @@ export async function PATCH(
   const { error } = await admin
     .from('assignments')
     .update({
-      name: body.name?.trim(),
+      title: body.name?.trim(),
       description: body.description?.trim() ?? '',
       event_type: body.event_type?.trim() ?? '',
       due_date: body.due_date || null,

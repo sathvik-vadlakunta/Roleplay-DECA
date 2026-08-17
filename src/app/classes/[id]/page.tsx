@@ -12,7 +12,7 @@ type Student = { id: string; full_name: string; submission_count: number }
 
 type Assignment = {
   id: string
-  name: string
+  title: string
   description: string
   event_type: string
   due_date: string | null
@@ -128,7 +128,7 @@ export default function ClassDashboard({ params }: { params: Promise<{ id: strin
 
   function startEdit(a: Assignment) {
     setEditingId(a.id)
-    setEditName(a.name)
+    setEditName(a.title)
     setEditEvent(a.event_type ?? '')
     setEditDesc(a.description ?? '')
     setEditDue(a.due_date ? a.due_date.slice(0, 10) : '')
@@ -306,7 +306,7 @@ export default function ClassDashboard({ params }: { params: Promise<{ id: strin
                       <div className="asgn-card-top">
                         <div className="asgn-card-top-left">
                           {a.event_type && <span className="event-pill">{a.event_type}</span>}
-                          <h3 className="asgn-name">{a.name}</h3>
+                          <h3 className="asgn-name">{a.title}</h3>
                         </div>
                         <div className="asgn-icon-btns">
                           <button className="icon-btn" onClick={() => startEdit(a)} title="Edit assignment">
