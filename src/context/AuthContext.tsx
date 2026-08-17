@@ -48,13 +48,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       // No profile row yet — build one from auth metadata so the app still works
       const meta = fallbackUser.user_metadata
       const role = (meta.role === 'teacher' ? 'teacher' : 'student') as 'student' | 'teacher'
-      // Upsert so future loads hit the real row
-      await supabase.from('profiles').upsert({
+      // Insert only — never overwrite a manually-set role
+      await supabase.from('profiles').insert({
         id: uid,
         full_name: meta.full_name ?? meta.name ?? '',
         role,
         class_id: null,
-      })
+      }).select().maybeSingle()
       setProfile({ id: uid, full_name: meta.full_name ?? '', role, class_id: null })
     } else {
       setProfile(null)
