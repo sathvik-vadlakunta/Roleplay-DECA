@@ -156,6 +156,10 @@ export default function ClassesPage() {
   return (
     <main className="classes-page">
       <div className="container">
+        {/* TEMP DEBUG — remove after fix confirmed */}
+        <pre style={{background:'#eee',padding:'8px',fontSize:'12px',marginBottom:'16px'}}>
+          {JSON.stringify({role: profile?.role, authLoading, resolvedTeacher}, null, 2)}
+        </pre>
         <div className="classes-header">
           <div>
             <h1>{resolvedTeacher ? 'Your Classes' : 'Classes'}</h1>
