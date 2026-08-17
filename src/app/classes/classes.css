@@ -190,6 +190,17 @@
   color: white;
 }
 
+.class-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.class-open-btn {
+  font-size: var(--text-xs) !important;
+}
+
 .regen-btn {
   font-family: var(--font-heading);
   font-weight: 700;

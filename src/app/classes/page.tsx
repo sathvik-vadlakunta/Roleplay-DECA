@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { Copy, Check, Plus, Users, Hash, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import './classes.css'
@@ -207,9 +208,15 @@ export default function ClassesPage() {
                       </button>
                     </div>
 
-                    <button className="regen-btn" onClick={() => regenerateCode(cls)}>
-                      Regenerate code
-                    </button>
+                    <div className="class-card-footer">
+                      <button className="regen-btn" onClick={() => regenerateCode(cls)}>
+                        Regenerate code
+                      </button>
+                      <Link href={`/classes/${cls.id}`} className="btn btn-primary class-open-btn">
+                        <span className="btn-label">Open class</span>
+                        <span className="btn-icon-badge"><ArrowRight size={14} strokeWidth={2.5} /></span>
+                      </Link>
+                    </div>
                   </div>
                 ))}
               </div>

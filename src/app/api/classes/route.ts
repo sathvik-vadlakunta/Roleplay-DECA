@@ -1,35 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { adminClient, getAuthUser } from '@/lib/supabase/admin'
 
-function adminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-}
-
-async function getAuthUser() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-  )
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
-}
-
-// GET /api/classes — list classes for the authenticated user
 export async function GET() {
   const user = await getAuthUser()
   if (!user) return NextResponse.json([], { status: 401 })
 
   const admin = adminClient()
 
-  // Check if teacher or student
   const { data: profile } = await admin
     .from('profiles')
     .select('role, class_id')
@@ -43,10 +20,8 @@ export async function GET() {
       .eq('teacher_id', user.id)
       .order('created_at', { ascending: false })
 
-    if (!classes) return NextResponse.json([])
-
     const withCounts = await Promise.all(
-      classes.map(async (cls) => {
+      (classes ?? []).map(async cls => {
         const { count } = await admin
           .from('profiles')
           .select('id', { count: 'exact', head: true })
@@ -57,7 +32,6 @@ export async function GET() {
     return NextResponse.json(withCounts)
   }
 
-  // Student — return their enrolled class
   if (profile?.class_id) {
     const { data: cls } = await admin
       .from('classes')
@@ -70,7 +44,6 @@ export async function GET() {
   return NextResponse.json([])
 }
 
-// POST /api/classes — create a new class (teachers only)
 export async function POST(req: Request) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -97,7 +70,6 @@ export async function POST(req: Request) {
   return NextResponse.json(data)
 }
 
-// PATCH /api/classes — update join code
 export async function PATCH(req: Request) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
