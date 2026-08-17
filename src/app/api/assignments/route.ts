@@ -58,6 +58,7 @@ export async function POST(req: Request) {
     .from('assignments')
     .insert({
       class_id,
+      teacher_id: user.id,
       title: name.trim(),
       description: description?.trim() ?? '',
       event_type: event_type?.trim() ?? '',
