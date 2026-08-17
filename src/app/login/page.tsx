@@ -1,14 +1,24 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, GraduationCap, BookOpen } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import './login.css'
 
-export default function Login() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [role, setRole] = useState<'student' | 'teacher'>('student')
+function LoginInner() {
+  const searchParams = useSearchParams()
+  const initialRole = searchParams.get('role') === 'teacher' ? 'teacher' : 'student'
+  const initialMode = searchParams.get('signup') === '1' ? 'signup' : 'login'
+
+  const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
+  const [role, setRole] = useState<'student' | 'teacher'>(initialRole)
+
+  useEffect(() => {
+    const r = searchParams.get('role')
+    if (r === 'teacher' || r === 'student') setRole(r)
+    if (searchParams.get('signup') === '1') setMode('signup')
+  }, [searchParams])
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -150,12 +160,21 @@ export default function Login() {
         </form>
 
         <p className="login-switch">
-          {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-          <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }}>
-            {mode === 'login' ? 'Sign up' : 'Log in'}
-          </button>
+          {mode === 'login' ? (
+            <>Don&apos;t have an account? <Link href="/signup">Sign up</Link></>
+          ) : (
+            <>Already have an account? <button onClick={() => { setMode('login'); setError('') }}>Log in</button></>
+          )}
         </p>
       </div>
     </main>
+  )
+}
+
+export default function Login() {
+  return (
+    <Suspense>
+      <LoginInner />
+    </Suspense>
   )
 }

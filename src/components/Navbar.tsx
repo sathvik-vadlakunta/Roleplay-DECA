@@ -52,10 +52,15 @@ export default function Navbar() {
               </button>
             </>
           ) : (
+            <>
+            <Link href="/signup" className="btn btn-secondary">
+              <span className="btn-label">Sign up</span>
+            </Link>
             <Link href="/login" className="btn btn-primary">
               <span className="btn-label">Log in</span>
               <span className="btn-icon-badge"><LogIn size={16} strokeWidth={2.5} /></span>
             </Link>
+          </>
           )}
         </div>
 
