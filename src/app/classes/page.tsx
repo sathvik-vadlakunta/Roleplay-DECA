@@ -18,7 +18,7 @@ function randomCode() {
 }
 
 export default function ClassesPage() {
-  const { user, profile } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
   const supabase = createClient()
   const isTeacher = profile?.role === 'teacher'
 
@@ -143,7 +143,7 @@ export default function ClassesPage() {
     load()
   }
 
-  if (!user) return (
+  if (!user || authLoading) return (
     <main className="classes-page">
       <div className="container">
         <div className="classes-loading">Loading…</div>
@@ -151,7 +151,6 @@ export default function ClassesPage() {
     </main>
   )
 
-  // Profile may still be fetching — default to student join view while waiting
   const resolvedTeacher = profile?.role === 'teacher'
 
   return (
