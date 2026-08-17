@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Copy, Check, Plus, Users, Hash, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { createClient } from '@/lib/supabase/client'
 import './classes.css'
 
 type Class = {
@@ -19,8 +18,6 @@ function randomCode() {
 
 export default function ClassesPage() {
   const { user, profile, loading: authLoading } = useAuth()
-  const supabase = createClient()
-  const isTeacher = profile?.role === 'teacher'
 
   const [classes, setClasses] = useState<Class[]>([])
   const [myClass, setMyClass] = useState<Class | null>(null)
@@ -39,57 +36,35 @@ export default function ClassesPage() {
   const [joinError, setJoinError] = useState('')
   const [joinSuccess, setJoinSuccess] = useState('')
 
+  const isTeacher = profile?.role === 'teacher'
+
   const load = useCallback(async () => {
     if (!user || !profile) return
     setLoading(true)
-
+    const res = await fetch('/api/classes')
+    const data: Class[] = res.ok ? await res.json() : []
     if (isTeacher) {
-      const { data } = await supabase
-        .from('classes')
-        .select('id, name, join_code, teacher_id')
-        .eq('teacher_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (data) {
-        // Count students per class
-        const withCounts = await Promise.all(
-          data.map(async (cls: Class) => {
-            const { count } = await supabase
-              .from('profiles')
-              .select('id', { count: 'exact', head: true })
-              .eq('class_id', cls.id)
-            return { ...cls, student_count: count ?? 0 }
-          })
-        )
-        setClasses(withCounts)
-      }
+      setClasses(data)
     } else {
-      // Student: fetch their current class
-      if (profile.class_id) {
-        const { data } = await supabase
-          .from('classes')
-          .select('id, name, join_code, teacher_id')
-          .eq('id', profile.class_id)
-          .single()
-        setMyClass(data ?? null)
-      }
+      setMyClass(data[0] ?? null)
     }
     setLoading(false)
-  }, [user, profile, isTeacher, supabase])
+  }, [user, profile, isTeacher])
 
   useEffect(() => { load() }, [load])
 
   async function createClass() {
-    if (!newClassName.trim() || !user) return
+    if (!newClassName.trim()) return
     setCreating(true)
     setCreateError('')
-    const code = randomCode()
-    const { error } = await supabase
-      .from('classes')
-      .insert({ name: newClassName.trim(), teacher_id: user.id, join_code: code })
-
-    if (error) {
-      setCreateError(error.message)
+    const res = await fetch('/api/classes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newClassName.trim(), join_code: randomCode() }),
+    })
+    if (!res.ok) {
+      const body = await res.json()
+      setCreateError(body.error ?? 'Failed to create class')
     } else {
       setNewClassName('')
       setShowCreate(false)
@@ -99,32 +74,20 @@ export default function ClassesPage() {
   }
 
   async function joinClass() {
-    if (!joinCode.trim() || !user) return
+    if (joinCode.trim().length < 6) return
     setJoining(true)
     setJoinError('')
     setJoinSuccess('')
-
-    const { data: cls, error: findError } = await supabase
-      .from('classes')
-      .select('id, name')
-      .eq('join_code', joinCode.trim().toUpperCase())
-      .single()
-
-    if (findError || !cls) {
-      setJoinError('Invalid code — double-check with your teacher.')
-      setJoining(false)
-      return
-    }
-
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ class_id: cls.id })
-      .eq('id', user.id)
-
-    if (updateError) {
-      setJoinError(updateError.message)
+    const res = await fetch('/api/classes/join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ join_code: joinCode }),
+    })
+    const body = await res.json()
+    if (!res.ok) {
+      setJoinError(body.error ?? 'Failed to join class')
     } else {
-      setJoinSuccess(`Joined "${cls.name}" successfully!`)
+      setJoinSuccess(`Joined "${body.name}" successfully!`)
       setJoinCode('')
       load()
     }
@@ -138,8 +101,11 @@ export default function ClassesPage() {
   }
 
   async function regenerateCode(cls: Class) {
-    const code = randomCode()
-    await supabase.from('classes').update({ join_code: code }).eq('id', cls.id)
+    await fetch('/api/classes', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: cls.id, join_code: randomCode() }),
+    })
     load()
   }
 
@@ -156,7 +122,7 @@ export default function ClassesPage() {
   return (
     <main className="classes-page">
       <div className="container">
-<div className="classes-header">
+        <div className="classes-header">
           <div>
             <h1>{resolvedTeacher ? 'Your Classes' : 'Classes'}</h1>
             <p>{resolvedTeacher
